@@ -1,0 +1,156 @@
+rm(list=ls(all=TRUE)) # clears the workspace
+graphics.off() # clears graphics
+###################################################
+data_sample_1 = read.csv("https://raw.githubusercontent.com/kekecsz/PSYP13_Data_analysis_class-2018/master/home_sample_1.csv")
+View(data_sample_1)
+library(psych)
+library(lm.beta) # for lm.beta
+library(car) # for scatter3d
+library(ggplot2) # for ggplot
+library(rgl) # for scatter3d
+library(mgcv)
+library(lsr)
+##################################################
+describe(data_sample_1)
+datasample1_cleaned = data_sample_1
+datasample1_cleaned = data_sample_1[-which(datasample1_cleaned[,"age"] == "222"),] # exclude invalid value
+View(datasample1_cleaned)
+describe(datasample1_cleaned)
+##################################################
+mod1 <- lm( pain ~ age + sex, data = datasample1_cleaned)
+mod2 <- lm( pain ~ age + sex + STAI_trait + pain_cat + cortisol_serum + cortisol_saliva  + mindfulness, data = datasample1_cleaned)
+mod3 <- lm( pain ~ age + sex + pain_cat + cortisol_serum + mindfulness, data = datasample1_cleaned)
+##################################################
+#Check for outlier
+#Model 1
+lev =hat(model.matrix(mod1))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+#Model 2
+lev =hat(model.matrix(mod2))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+datasample1_cleaned = datasample1_cleaned[-89,] #delete outlier
+mod1 = update(mod1) #update model 1
+mod2 = update(mod2) #update model 2
+
+datasample1_cleaned = datasample1_cleaned[-43,] #delete outlier
+mod1 = update(mod1) #update model 1
+mod2 = update(mod2) #update model 2
+mod3 = update(mod3) #update model 2
+##################################################
+#Control that there are no more outliers
+
+#Model 1
+lev =hat(model.matrix(mod1))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)] 
+
+#Model 2
+lev =hat(model.matrix(mod2))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+#Model 3
+lev =hat(model.matrix(mod3))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+##################################################
+hist(datasample1_cleaned$age, breaks = 30)
+hist(datasample1_cleaned$STAI_trait, breaks = 30)
+hist(datasample1_cleaned$pain_cat, breaks = 30)
+hist(datasample1_cleaned$cortisol_serum, breaks = 30)
+hist(datasample1_cleaned$cortisol_saliva, breaks = 30)
+hist(datasample1_cleaned$mindfulness, breaks = 30)
+###################################################
+plot(pain ~ STAI_trait, data = datasample1_cleaned)
+abline(lm(pain ~ STAI_trait, data = datasample1_cleaned))
+
+plot(pain ~ pain_cat, data = datasample1_cleaned)
+abline(lm(pain ~ pain_cat, data = datasample1_cleaned))
+
+plot(pain ~ cortisol_serum, data = datasample1_cleaned)
+abline(lm(pain ~ cortisol_serum, data = datasample1_cleaned))
+
+plot(pain ~ cortisol_saliva, data = datasample1_cleaned)
+abline(lm(pain ~ cortisol_saliva, data = datasample1_cleaned))
+
+plot(pain ~ mindfulness, data = datasample1_cleaned)
+abline(lm(pain ~ mindfulness, data = datasample1_cleaned))
+#############################################################
+summary(mod1)
+summary(mod2)
+summary(mod3)
+
+AIC(mod1)
+AIC(mod2)
+AIC(mod3)
+#####################################################
+#Model 1 analysis
+confint(mod1)
+lm.beta(mod1)
+
+mod1 <- lm(mod1, data=datasample1_cleaned)
+mean(mod1$residuals)
+
+
+par(mfrow=c(2,2))  # set 2 rows and 2 column plot layout
+mod1 <- lm(pain ~ age + sex, data=datasample1_cleaned)  # linear model
+plot(mod1)
+
+vif(mod1)
+
+standardCoefs( mod1 )
+hist(residuals(mod1))
+#####################################################
+#Model 2 analysis
+confint(mod2)
+lm.beta(mod2)
+
+mod2 <- lm(mod2, data=datasample1_cleaned)
+mean(mod2$residuals)
+
+par(mfrow=c(2,2))  # set 2 rows and 2 column plot layout
+mod2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + cortisol_serum + cortisol_saliva  + mindfulness, data = datasample1_cleaned)  # linear model
+plot(mod2)
+
+vif(mod2)
+
+standardCoefs( mod2 )
+hist(residuals(mod2))
+#####################################################
+#Model 3 analysis
+confint(mod3)
+lm.beta(mod3)
+
+mod3 <- lm(mod3, data=datasample1_cleaned)
+mean(mod3$residuals)
+
+par(mfrow=c(2,2))  # set 2 rows and 2 column plot layout
+mod3 <- lm(pain ~ age + sex + pain_cat + cortisol_serum + mindfulness, data = datasample1_cleaned)  # linear model
+plot(mod3)
+
+vif(mod3)
+
+standardCoefs( mod3 )
+hist(residuals(mod3))
+############################################################
+anova(mod1, mod3)
+#THE####################################################END#
