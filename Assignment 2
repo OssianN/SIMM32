@@ -1,0 +1,122 @@
+rm(list=ls(all=TRUE)) # clears the workspace
+graphics.off() # clears graphics
+###################################################
+data_sample_1 = read.csv("https://raw.githubusercontent.com/kekecsz/PSYP13_Data_analysis_class-2018/master/home_sample_1.csv")
+View(data_sample_1)
+#I am just going to load all packages used before, in case any of them will be needed.
+library(sciplot)
+library(psych)
+library(lm.beta) # for lm.beta
+library(car) # for scatter3d
+library(ggplot2) # for ggplot
+library(rgl) # for scatter3d
+library(mgcv)
+library(lsr)
+library(HSAUR2)
+library(MVA)
+library(MASS)
+source("GraphPlots.R")
+openGraph()
+##################################################
+describe(data_sample_1)
+datasample1_cleaned = data_sample_1
+datasample1_cleaned = data_sample_1[-which(datasample1_cleaned[,"age"] == "222"),] # exclude invalid value
+View(datasample1_cleaned)
+describe(datasample1_cleaned)
+##################################################
+mod1 <- lm( pain ~ age + sex + STAI_trait + pain_cat + cortisol_serum + cortisol_saliva  + mindfulness, data = datasample1_cleaned)
+mod2 <- lm( pain ~ age + sex + weight + STAI_trait + pain_cat + cortisol_serum + mindfulness, data = datasample1_cleaned)
+##################################################
+#Check for outlier
+#Model 1
+lev =hat(model.matrix(mod1))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+#Model 2
+lev =hat(model.matrix(mod2))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+datasample1_cleaned = datasample1_cleaned[-89,] #delete outlier
+mod1 = update(mod1) #update model 1
+mod2 = update(mod2) #update model 2
+
+# Checking again
+#Model 1
+lev =hat(model.matrix(mod1))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+
+#Model 2
+lev =hat(model.matrix(mod2))
+plot(lev)
+N= nrow(datasample1_cleaned)
+mahad=(N-1)*(lev-1 / N)
+tail(sort(mahad),5)
+order(mahad,decreasing=T)[c(5,4,3,2,1)]
+##################################################
+step(mod2, direction = "backward")
+Backwardmodel <- lm(formula = pain ~ age + sex + pain_cat + cortisol_serum + mindfulness, data = datasample1_cleaned)
+summary(Backwardmodel)
+#Since I choosed to remove the non-significant variables in Assignment 1 
+### and the results of that equals the backward model, I will pretend here
+### to have not done that for the purpose of current assignment.
+Theorybased = mod1
+summary(Theorybased)
+summary(mod2)
+###################################################
+newdata = read.csv("https://raw.githubusercontent.com/kekecsz/PSYP13_Data_analysis_class-2018/master/home_sample_2.csv")
+View(newdata)
+#####################################################
+#determining the models's performance by predicting the the results of a separate data set. 
+pred_back <- predict(Backwardmodel, newdata)
+pred_theory <- predict(Theorybased, newdata)
+
+RSS_back = sum((newdata[,"pain"] - pred_back)^2)
+RSS_theory = sum((newdata[,"pain"] - pred_theory)^2)
+
+RSS_back
+RSS_theory
+#a slightly larger error in the backward regression model.
+#####################################################
+#Backward model
+confint(Backwardmodel)
+lm.beta(Backwardmodel)
+
+Backwardmodel <- lm(Backwardmodel, data=datasample1_cleaned)
+mean(Backwardmodel$residuals)
+
+vif(Backwardmodel)
+
+standardCoefs( Backwardmodel )
+hist(residuals(Backwardmodel))
+
+######################################################
+#Theory model
+
+confint(Theorybased)
+lm.beta(Theorybased)
+
+Theorybased <- lm(Theorybased, data=datasample1_cleaned)
+mean(Theorybased$residuals)
+
+vif(Theorybased)
+
+standardCoefs( Theorybased )
+hist(residuals(Theorybased))
+######################################################
+anova(Backwardmodel, mod2)
+anova(Backwardmodel, Theorybased)
+AIC(Backwardmodel)
+AIC(mod2)
+AIC(Theorybased)
