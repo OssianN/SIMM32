@@ -1,0 +1,34 @@
+DATASET ACTIVATE DataSet3.
+  REGRESSION
+  /MISSING LISTWISE
+  /STATISTICS COEFF OUTS CI(95) R ANOVA COLLIN TOL
+  /CRITERIA=PIN(.05) POUT(.10)
+  /NOORIGIN 
+  /DEPENDENT pain
+  /METHOD=ENTER age sex_male pain_cat cortisol_serum mindfulness
+  /SAVE PRED ADJPRED RESID.
+
+DATASET ACTIVATE DataSet4.
+RECODE sex ('female'=0) ('male'=1) (ELSE=SYSMIS) INTO sex_male.
+VARIABLE LABELS  sex_male 'sex_male'.
+EXECUTE.
+
+DATASET ACTIVATE DataSet4.
+REGRESSION
+  /DESCRIPTIVES MEAN STDDEV CORR SIG N
+  /MISSING LISTWISE
+  /STATISTICS COEFF OUTS CI(95) R ANOVA COLLIN TOL
+  /CRITERIA=PIN(.05) POUT(.10)
+  /NOORIGIN 
+  /DEPENDENT pain
+  /METHOD=ENTER age sex_male pain_cat cortisol_serum mindfulness
+  /SAVE PRED RESID.
+
+COMPUTE estimated_pain=2.106 -(0.030 * age) + (0.391 * sex_male) + (0.063 * pain_cat) + (0.511 * 
+    cortisol_serum) - (0.244 * Mindfulness).
+EXECUTE.
+
+COMPUTE residual=pain - estimated_pain.
+EXECUTE.
+
+
