@@ -1,5 +1,6 @@
 rm(list=ls(all=TRUE)) # clears the workspace
-graphics.off() # clears graphics ################################################### data_sample_1 = read.csv("https://raw.githubusercontent.com/kekecsz/ PSYP13_Data_analysis_class-2018/master/home_sample_1.csv") View(data_sample_1)
+graphics.off() # clears graphics 
+###################################################
 library(psych)
 library(lm.beta) # for lm.beta
 library(car) # for scatter3d
