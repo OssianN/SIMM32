@@ -1,34 +1,51 @@
+* Encoding: UTF-8.
 DATASET ACTIVATE DataSet3.
-  REGRESSION
+
+RECODE sex ('female'=1) ('male'=0) (ELSE=SYSMIS) INTO sex_female.
+
+EXAMINE VARIABLES=pain
+  /PLOT BOXPLOT HISTOGRAM NPPLOT
+  /COMPARE GROUPS
+  /STATISTICS DESCRIPTIVES
+  /CINTERVAL 95
   /MISSING LISTWISE
-  /STATISTICS COEFF OUTS CI(95) R ANOVA COLLIN TOL
-  /CRITERIA=PIN(.05) POUT(.10)
-  /NOORIGIN 
-  /DEPENDENT pain
-  /METHOD=ENTER age sex_male pain_cat cortisol_serum mindfulness
-  /SAVE PRED ADJPRED RESID.
+  /NOTOTAL.
+
+MIXED pain BY sex WITH age STAI_trait pain_cat cortisol_serum cortisol_saliva mindfulness
+  /CRITERIA=CIN(95) MXITER(100) MXSTEP(10) SCORING(1) SINGULAR(0.000000000001) HCONVERGE(0, 
+    ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=sex age STAI_trait pain_cat cortisol_serum cortisol_saliva mindfulness | SSTYPE(3)
+  /METHOD=REML
+  /PRINT=DESCRIPTIVES  SOLUTION
+  /RANDOM=INTERCEPT | SUBJECT(hospital) COVTYPE(VC) SOLUTION.
+
+DESCRIPTIVES VARIABLES=FXPRED_1
+  /STATISTICS=VARIANCE.
+
 
 DATASET ACTIVATE DataSet4.
-RECODE sex ('female'=0) ('male'=1) (ELSE=SYSMIS) INTO sex_male.
-VARIABLE LABELS  sex_male 'sex_male'.
+RECODE sex ('female'=1) ('male'=0) (ELSE=SYSMIS) INTO sex_female.
+
+
+
+COMPUTE Variance=pain - Predicted_Pain.
 EXECUTE.
 
-DATASET ACTIVATE DataSet4.
-REGRESSION
-  /DESCRIPTIVES MEAN STDDEV CORR SIG N
-  /MISSING LISTWISE
-  /STATISTICS COEFF OUTS CI(95) R ANOVA COLLIN TOL
-  /CRITERIA=PIN(.05) POUT(.10)
-  /NOORIGIN 
-  /DEPENDENT pain
-  /METHOD=ENTER age sex_male pain_cat cortisol_serum mindfulness
-  /SAVE PRED RESID.
-
-COMPUTE estimated_pain=2.106 -(0.030 * age) + (0.391 * sex_male) + (0.063 * pain_cat) + (0.511 * 
-    cortisol_serum) - (0.244 * Mindfulness).
+COMPUTE squaredError=variance * variance.
 EXECUTE.
 
-COMPUTE residual=pain - estimated_pain.
+DESCRIPTIVES VARIABLES=squaredError
+  /STATISTICS=SUM.
+
+FREQUENCIES VARIABLES=pain
+  /STATISTICS=STDDEV MEAN
+  /ORDER=ANALYSIS.
+
+COMPUTE sumSquared=(pain - 4.99)  * (pain - 4.99) .
 EXECUTE.
 
+DESCRIPTIVES VARIABLES=sumSquared
+  /STATISTICS=SUM.
 
+COMPUTE RSquared=1 - (349.02 - 607.9).
+EXECUTE.
